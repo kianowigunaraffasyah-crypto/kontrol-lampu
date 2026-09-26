@@ -6,21 +6,46 @@
     <!-- Library untuk terhubung ke MQTT -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #1e1e2f; color: white; padding-top: 40px; }
-        .card { background: #2b2b40; display: inline-block; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .icon { font-size: 80px; margin: 15px 0; }
-        .btn { padding: 12px 25px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; margin: 10px; cursor: pointer; color: white; }
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background-color: #1e1e2f; 
+            color: white; 
+            padding-top: 40px; 
+        }
+        .card { 
+            background: #2b2b40; 
+            display: inline-block; 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+        }
+        .icon { 
+            font-size: 80px; 
+            margin: 15px 0; 
+        }
+        .btn { 
+            padding: 12px 25px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            border: none; 
+            border-radius: 8px; 
+            margin: 10px; 
+            cursor: pointer; 
+            color: white; 
+        }
         .btn-on { background-color: #4CAF50; }
         .btn-off { background-color: #f44336; }
         .status { font-weight: bold; color: #ffca28; }
     </style>
 </head>
 <body>
-
 <div class="card">
     <h2>Kontrol Lampu ESP32</h2>
+    
     <!-- Gambar Indikator Lampu -->
     <div id="gambarLampu" class="icon">⚪</div>
+    
     <p>Status Lampu: <span id="teksStatus" class="status">MENGHUBUNGKAN...</span></p>
     
     <!-- Tombol Kontrol -->
@@ -59,6 +84,5 @@
         client.send(msg);
     }
 </script>
-
 </body>
 </html>
