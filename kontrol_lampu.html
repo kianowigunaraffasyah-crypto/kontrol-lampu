@@ -2,12 +2,13 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Kontrol Lampu IoT</title>
+    <title>Kontrol Lampu ESP32</title>
+    <!-- Library untuk terhubung ke MQTT -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background-color: #1e1e2f; color: white; padding-top: 30px; }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #1e1e2f; color: white; padding-top: 40px; }
         .card { background: #2b2b40; display: inline-block; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .icon { font-size: 90px; margin: 15px 0; }
+        .icon { font-size: 80px; margin: 15px 0; }
         .btn { padding: 12px 25px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; margin: 10px; cursor: pointer; color: white; }
         .btn-on { background-color: #4CAF50; }
         .btn-off { background-color: #f44336; }
@@ -18,23 +19,27 @@
 
 <div class="card">
     <h2>Kontrol Lampu ESP32</h2>
+    <!-- Gambar Indikator Lampu -->
     <div id="gambarLampu" class="icon">⚪</div>
-    <p>Status Lampu: <span id="teksStatus" class="status">MEMUAT...</span></p>
+    <p>Status Lampu: <span id="teksStatus" class="status">MENGHUBUNGKAN...</span></p>
     
+    <!-- Tombol Kontrol -->
     <button class="btn btn-on" onclick="kirim('ON')">NYALAKAN</button>
     <button class="btn btn-off" onclick="kirim('OFF')">MATIKAN</button>
 </div>
 
 <script>
+    // Koneksi ke server HiveMQ
     const client = new Paho.MQTT.Client("broker.hivemq.com", 8000, "web_" + Math.random().toString(16).substr(2, 8));
     
+    // Menerima pembaruan status dari ESP32
     client.onMessageArrived = function(msg) {
         if (msg.payloadString === "ON") {
-            document.getElementById("gambarLampu").innerHTML = "💡";
+            document.getElementById("gambarLampu").innerText = "💡";
             document.getElementById("teksStatus").innerText = "MENYALA";
             document.getElementById("teksStatus").style.color = "#4CAF50";
         } else if (msg.payloadString === "OFF") {
-            document.getElementById("gambarLampu").innerHTML = "⚪";
+            document.getElementById("gambarLampu").innerText = "⚪";
             document.getElementById("teksStatus").innerText = "MATI";
             document.getElementById("teksStatus").style.color = "#f44336";
         }
@@ -43,10 +48,11 @@
     client.connect({
         onSuccess: function() {
             client.subscribe("rumah/lampu/status");
-            document.getElementById("teksStatus").innerText = "TERHUBUNG";
+            document.getElementById("teksStatus").innerText = "SIAP";
         }
     });
 
+    // Mengirim perintah ke ESP32
     function kirim(pesan) {
         let msg = new Paho.MQTT.Message(pesan);
         msg.destinationName = "rumah/lampu/kontrol";
