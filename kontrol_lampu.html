@@ -3,7 +3,10 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kontrol Lampu ESP32</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    
+    <!-- Library MQTT yang lebih stabil -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -103,59 +106,55 @@
 </div>
 
 <script>
-    // ===== PERUBAHAN PENTING: pakai port 8884 + SSL =====
-    const client = new Paho.MQTT.Client(
-        "broker.hivemq.com",
-        8884,
-        "web_" + Math.random().toString(16).substr(2, 8)
-    );
-
     const gambarLampu = document.getElementById("gambarLampu");
     const teksStatus  = document.getElementById("teksStatus");
 
-    client.onMessageArrived = function(msg) {
-        if (msg.payloadString === "ON") {
+    // Koneksi ke HiveMQ menggunakan WSS (aman & stabil di HP)
+    const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
+
+    client.on('connect', function () {
+        console.log('Terhubung ke MQTT');
+        teksStatus.innerText = "SIAP";
+        teksStatus.style.color = "#ffca28";
+        
+        // Subscribe ke status lampu
+        client.subscribe('rumah/lampu/status');
+    });
+
+    client.on('message', function (topic, message) {
+        const msg = message.toString();
+        console.log('Pesan masuk:', msg);
+
+        if (msg === 'ON') {
             gambarLampu.classList.add("nyala");
             teksStatus.innerText = "MENYALA";
             teksStatus.style.color = "#4CAF50";
-        } else if (msg.payloadString === "OFF") {
+        } 
+        else if (msg === 'OFF') {
             gambarLampu.classList.remove("nyala");
             teksStatus.innerText = "MATI";
             teksStatus.style.color = "#f44336";
         }
-    };
+    });
 
-    client.onConnectionLost = function(responseObject) {
-        if (responseObject.errorCode !== 0) {
-            teksStatus.innerText = "KONEKSI TERPUTUS";
-            teksStatus.style.color = "#f44336";
-        }
-    };
+    client.on('error', function (err) {
+        console.log('Error:', err);
+        teksStatus.innerText = "GAGAL TERHUBUNG";
+        teksStatus.style.color = "#f44336";
+    });
 
-    // Koneksi dengan SSL (useSSL: true)
-    client.connect({
-        useSSL: true,
-        onSuccess: function() {
-            console.log("Berhasil terhubung ke MQTT");
-            client.subscribe("rumah/lampu/status");
-            teksStatus.innerText = "SIAP";
-            teksStatus.style.color = "#ffca28";
-        },
-        onFailure: function(err) {
-            console.log("Gagal koneksi:", err);
-            teksStatus.innerText = "GAGAL TERHUBUNG";
-            teksStatus.style.color = "#f44336";
-        }
+    client.on('close', function () {
+        teksStatus.innerText = "KONEKSI TERPUTUS";
+        teksStatus.style.color = "#f44336";
     });
 
     function kirim(pesan) {
-        if (!client.isConnected()) {
+        if (!client.connected) {
             alert("Belum terhubung ke server!");
             return;
         }
-        let msg = new Paho.MQTT.Message(pesan);
-        msg.destinationName = "rumah/lampu/kontrol";
-        client.send(msg);
+        client.publish('rumah/lampu/kontrol', pesan);
+        console.log('Mengirim:', pesan);
     }
 </script>
 </body>
