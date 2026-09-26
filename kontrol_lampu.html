@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kontrol Lampu Jarak Jauh</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #1e1e2e, #11111b);
+    color: #cdd6f4;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  h1 {
+    color: #89b4fa;
+    margin-bottom: 10px;
+  }
+  .status-box {
+    background: #313244;
+    padding: 15px 40px;
+    border-radius: 15px;
+    margin: 20px 0;
+    font-size: 20px;
+    font-weight: bold;
+  }
+  .lampu {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    margin: 20px 0;
+    transition: all 0.4s ease;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  }
+  .mati {
+    background: #45475a;
+    box-shadow: 0 0 10px #111;
+  }
+  .nyala {
+    background: #f9e2af;
+    box-shadow: 0 0 40px #f9e2af, 0 0 80px #f9e2af;
+  }
+  .tombol {
+    display: flex;
+    gap: 20px;
+    margin-top: 30px;
+  }
+  button {
+    padding: 16px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn-on {
+    background: #a6e3a1;
+    color: #1e1e2e;
+  }
+  .btn-off {
+    background: #f38ba8;
+    color: #1e1e2e;
+  }
+  button:active {
+    transform: scale(0.95);
+  }
+  .info {
+    margin-top: 40px;
+    color: #6c7086;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+  <h1>Kontrol Lampu Jarak Jauh</h1>
+  <div class="status-box" id="status">Menghubungkan...</div>
+
+  <!-- Gambar Lampu -->
+  <div class="lampu mati" id="lampu"></div>
+
+  <div class="tombol">
+    <button class="btn-on" onclick="kirim('ON')">NYALAKAN</button>
+    <button class="btn-off" onclick="kirim('OFF')">MATIKAN</button>
+  </div>
+
+  <div class="info">
+    Bisa dikontrol dari mana saja selama ada internet<br>
+    Tombol fisik di ESP32 tetap berfungsi
+  </div>
+
+<script>
+  // Koneksi ke HiveMQ Public Broker via WebSocket
+  const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
+
+  const statusEl = document.getElementById('status');
+  const lampuEl  = document.getElementById('lampu');
+
+  client.on('connect', () => {
+    statusEl.innerText = "Terhubung ke Server";
+    client.subscribe('rumah/lampu/status');
+  });
+
+  client.on('message', (topic, message) => {
+    const msg = message.toString();
+    if (msg === 'ON') {
+      statusEl.innerText = "LAMPU MENYALA";
+      statusEl.style.color = "#a6e3a1";
+      lampuEl.className = "lampu nyala";
+    } else if (msg === 'OFF') {
+      statusEl.innerText = "LAMPU MATI";
+      statusEl.style.color = "#f38ba8";
+      lampuEl.className = "lampu mati";
+    }
+  });
+
+  function kirim(perintah) {
+    client.publish('rumah/lampu/kontrol', perintah);
+  }
+
+  client.on('error', (err) => {
+    statusEl.innerText = "Gagal terhubung";
+    console.log(err);
+  });
+</script>
+
+</body>
+</html>
