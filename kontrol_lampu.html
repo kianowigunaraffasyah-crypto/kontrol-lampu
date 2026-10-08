@@ -25,18 +25,20 @@
             width: 280px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
-        /* Tampilan Lampu MATI (Warna Abu-abu) */
+
+        /* LAMPI MATI: Dibuat warna abu-abu (grayscale 100%) dan redup */
         .icon-lampu {
-            font-size: 70px;
-            color: #888888;
-            transition: all 0.3s ease;
+            font-size: 80px;
             margin-bottom: 10px;
+            filter: grayscale(100%) opacity(0.3);
+            transition: all 0.3s ease;
         }
-        /* Tampilan Lampu MENYALA (Warna Kuning Terang) */
+
+        /* LAMPU MENYALA: Warna kuning asli dengan efek cahaya berpijar */
         .lampu-on {
-            color: #ffeb3b;
-            text-shadow: 0 0 30px #ffeb3b;
+            filter: grayscale(0%) opacity(1) drop-shadow(0 0 20px #ffeb3b);
         }
+
         .btn {
             padding: 12px 25px;
             border: none;
@@ -70,9 +72,9 @@
 
             var icon = document.getElementById("iconLampu");
             if (pesan === "ON") {
-                icon.className = "icon-lampu lampu-on"; // Mengubah ke warna Kuning Terang
+                icon.className = "icon-lampu lampu-on"; // Berubah ke Kuning Bersinar
             } else {
-                icon.className = "icon-lampu"; // Mengubah ke warna Abu-abu
+                icon.className = "icon-lampu"; // Berubah ke Abu-abu Redup
             }
         }
     </script>
@@ -84,8 +86,8 @@
         <h3>Kontrol Lampu ESP32</h3>
         <p id="status" style="color: #ff6b6b; font-weight: bold;">● Menghubungkan...</p>
         
-        <button class="btn btn-on" onclick="kirimPerintah('ON')">ON</button>
-        <button class="btn btn-off" onclick="kirimPerintah('OFF')">OFF</button>
+        <button class="btn btn-on" onclick="kirimPerintah('ON')">NYALAKAN</button>
+        <button class="btn btn-off" onclick="kirimPerintah('OFF')">MATIKAN</button>
     </div>
 
 </body>
