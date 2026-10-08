@@ -4,56 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kontrol Lampu IoT</title>
-    <!-- Library MQTT -->
+    
+    <!-- Library MQTT Paho -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 
     <style>
-        * { box-sizing: border-box; }
         body {
             font-family: Arial, sans-serif;
             background: #1e1e2f;
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            color: white;
+            text-align: center;
+            padding-top: 50px;
             margin: 0;
         }
         .card {
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
+            border-radius: 15px;
             padding: 30px;
-            width: 320px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: inline-block;
+            width: 280px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
-        /* Gambar Lampu: Warna Awal Abu-abu (OFF) */
         .icon-lampu {
-            font-size: 80px;
+            font-size: 70px;
             color: #888888;
             transition: all 0.3s ease;
             margin-bottom: 10px;
         }
-        /* Gambar Lampu: Warna Hijau Menyala (ON) */
         .lampu-on {
             color: #38ef7d;
-            text-shadow: 0 0 25px #38ef7d;
+            text-shadow: 0 0 20px #38ef7d;
         }
-        .status-box {
-            font-size: 14px;
-            margin-bottom: 25px;
-            color: #ff6b6b;
-            font-weight: bold;
-        }
-        .btn-group { display: flex; gap: 15px; }
-        button {
-            flex: 1;
-            padding: 14px;
+        .btn {
+            padding: 12px 25px;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
+            border-radius: 8px;
             font-weight: bold;
+            font-size: 16px;
             cursor: pointer;
+            margin: 5px;
             color: white;
         }
         .btn-on { background: #38ef7d; color: #1e1e2f; }
@@ -61,13 +50,14 @@
     </style>
 
     <script>
+        // Menggunakan server EMQX pada port 8083
         var idAcak = "client_web_" + Math.floor(Math.random() * 10000);
-        var client = new Paho.MQTT.Client("broker.hivemq.com", 8000, idAcak);
+        var client = new Paho.MQTT.Client("broker.emqx.io", 8083, idAcak);
 
         client.connect({
             onSuccess: function () {
                 var status = document.getElementById("status");
-                status.innerText = "● Terhubung Ke Internet";
+                status.innerText = "● Terhubung Ke Server";
                 status.style.color = "#38ef7d";
             }
         });
@@ -90,15 +80,12 @@
 <body>
 
     <div class="card">
-        <!-- Gambar Ikon Lampu -->
         <div id="iconLampu" class="icon-lampu">💡</div>
-        <h2>Kontrol LED ESP32</h2>
-        <div id="status" class="status-box">● Menghubungkan...</div>
-
-        <div class="btn-group">
-            <button class="btn-on" onclick="kirimPerintah('ON')">ON</button>
-            <button class="btn-off" onclick="kirimPerintah('OFF')">OFF</button>
-        </div>
+        <h3>Kontrol Lampu ESP32</h3>
+        <p id="status" style="color: #ff6b6b; font-weight: bold;">● Menghubungkan...</p>
+        
+        <button class="btn btn-on" onclick="kirimPerintah('ON')">ON</button>
+        <button class="btn btn-off" onclick="kirimPerintah('OFF')">OFF</button>
     </div>
 
 </body>
