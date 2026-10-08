@@ -25,15 +25,17 @@
             width: 280px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
+        /* Tampilan Lampu MATI (Warna Abu-abu) */
         .icon-lampu {
             font-size: 70px;
             color: #888888;
             transition: all 0.3s ease;
             margin-bottom: 10px;
         }
+        /* Tampilan Lampu MENYALA (Warna Kuning Terang) */
         .lampu-on {
-            color: #38ef7d;
-            text-shadow: 0 0 20px #38ef7d;
+            color: #ffeb3b;
+            text-shadow: 0 0 30px #ffeb3b;
         }
         .btn {
             padding: 12px 25px;
@@ -50,7 +52,6 @@
     </style>
 
     <script>
-        // Menggunakan server EMQX pada port 8083
         var idAcak = "client_web_" + Math.floor(Math.random() * 10000);
         var client = new Paho.MQTT.Client("broker.emqx.io", 8083, idAcak);
 
@@ -67,12 +68,11 @@
             message.destinationName = "esp32/lampu/kontrol";
             client.send(message);
 
-            // Mengubah warna ikon lampu saat tombol ditekan
             var icon = document.getElementById("iconLampu");
             if (pesan === "ON") {
-                icon.className = "icon-lampu lampu-on"; // Warna Hijau
+                icon.className = "icon-lampu lampu-on"; // Mengubah ke warna Kuning Terang
             } else {
-                icon.className = "icon-lampu"; // Warna Abu-abu
+                icon.className = "icon-lampu"; // Mengubah ke warna Abu-abu
             }
         }
     </script>
