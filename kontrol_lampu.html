@@ -3,22 +3,18 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kontrol Lampu Jarak Jauh</title>
-    <!-- Library untuk mengirim sinyal internet dari browser -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
-
     <script>
-        // Menghubungkan browser ke server internet gratis
         var idAcak = "client_" + Math.floor(Math.random() * 1000);
         var client = new Paho.MQTT.Client("broker.hivemq.com", 8000, idAcak);
 
         client.connect({
             onSuccess: function () {
-                document.getElementById("status").innerText = "Terhubung ke Internet!";
+                document.getElementById("status").innerText = "Terhubung!";
                 document.getElementById("status").style.color = "green";
             }
         });
 
-        // Fungsi untuk mengirim perintah ON atau OFF
         function kirimPerintah(pesan) {
             var message = new Paho.MQTT.Message(pesan);
             message.destinationName = "esp32/lampu/kontrol";
@@ -28,7 +24,7 @@
 </head>
 <body style="text-align:center; font-family:Arial; margin-top:50px;">
     <h2>Kontrol Lampu Jarak Jauh</h2>
-    <p id="status" style="color:red;">Menghubungkan ke server...</p>
+    <p id="status" style="color:red;">Menghubungkan...</p>
     
     <div style="margin-top:30px;">
         <button onclick="kirimPerintah('ON')" style="padding:15px 35px; background-color:green; color:white; font-size:20px; border:none; border-radius:5px; margin:10px;">ON</button>
