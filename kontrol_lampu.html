@@ -1,10 +1,105 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Kontrol Lampu Jarak Jauh</title>
-    <!-- Library untuk mengirim sinyal internet dari browser -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kontrol Lampu IoT Modern</title>
+    
+    <!-- Library MQTT Paho -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #1e1e2f, #2d2b42);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 35px 25px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .icon-lampu {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin: 0 0 15px 0;
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .status-box {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-bottom: 30px;
+            background: rgba(235, 57, 65, 0.2);
+            color: #ff6b6b;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .btn-on {
+            background: linear-gradient(45deg, #11998e, #38ef7d);
+            box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
+        }
+
+        .btn-on:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(56, 239, 125, 0.5);
+        }
+
+        .btn-off {
+            background: linear-gradient(45deg, #eb3941, #f15e64);
+            box-shadow: 0 4px 15px rgba(235, 57, 65, 0.3);
+        }
+
+        .btn-off:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(235, 57, 65, 0.5);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+    </style>
 
     <script>
         var idAcak = "client_web_" + Math.floor(Math.random() * 10000);
@@ -12,8 +107,14 @@
 
         client.connect({
             onSuccess: function () {
-                document.getElementById("status").innerText = "Terhubung ke Internet!";
-                document.getElementById("status").style.color = "green";
+                var status = document.getElementById("status");
+                status.innerText = "● Terhubung Ke Internet";
+                status.style.background = "rgba(56, 239, 125, 0.2)";
+                status.style.color = "#38ef7d";
+            },
+            onFailure: function () {
+                var status = document.getElementById("status");
+                status.innerText = "● Koneksi Gagal";
             }
         });
 
@@ -24,13 +125,18 @@
         }
     </script>
 </head>
-<body style="text-align:center; font-family:Arial; margin-top:50px;">
-    <h2>Kontrol Lampu Jarak Jauh</h2>
-    <p id="status" style="color:red;">Menghubungkan ke server...</p>
-    
-    <div style="margin-top:30px;">
-        <button onclick="kirimPerintah('ON')" style="padding:15px 30px; background-color:green; color:white; font-size:18px; border:none; border-radius:5px; margin:10px;">NYALAKAN (ON)</button>
-        <button onclick="kirimPerintah('OFF')" style="padding:15px 30px; background-color:red; color:white; font-size:18px; border:none; border-radius:5px; margin:10px;">MATIKAN (OFF)</button>
+<body>
+
+    <div class="card">
+        <div class="icon-lampu">💡</div>
+        <h2>Smart Home LED</h2>
+        <div id="status" class="status-box">● Menghubungkan...</div>
+
+        <div class="btn-group">
+            <button class="btn-on" onclick="kirimPerintah('ON')">ON</button>
+            <button class="btn-off" onclick="kirimPerintah('OFF')">OFF</button>
+        </div>
     </div>
+
 </body>
 </html>
