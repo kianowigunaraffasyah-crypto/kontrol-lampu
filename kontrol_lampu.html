@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-  <title>HC-SR04 Controller</title>
+  <title>HC-SR04 Bahaya Monitor</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
     body{background:#0f0f13;color:#e0e0e0;min-height:100vh;display:flex;justify-content:center;padding:16px}
     .container{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
-    .card{background:#1a1b26;border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
-    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .card{background:#1a1b26;border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
     .header h1{font-size:17px;font-weight:600;color:#c0caf5}
-    .dot{width:10px;height:10px;border-radius:50%;background:#f7768e;box-shadow:0 0 8px #f7768e}
+    .dot{width:11px;height:11px;border-radius:50%;background:#f7768e;box-shadow:0 0 8px #f7768e}
     .dot.on{background:#9ece6a;box-shadow:0 0 8px #9ece6a}
-    .gauge-box{display:flex;flex-direction:column;align-items:center;padding:8px 0}
+    .gauge-box{display:flex;flex-direction:column;align-items:center;padding:10px 0 4px}
     .gauge{position:relative;width:190px;height:190px}
     .gauge svg{transform:rotate(-90deg)}
     .gauge-bg{fill:none;stroke:#2a2b3d;stroke-width:12}
@@ -24,19 +24,23 @@
     .center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
     .val{font-size:46px;font-weight:700;color:#c0caf5;line-height:1}
     .unit{font-size:13px;color:#565f89;margin-top:3px}
-    .status{margin-top:12px;font-size:13px;color:#a9b1d6;text-align:center}
-    .btn{width:100%;padding:14px;border:none;border-radius:14px;font-size:14px;font-weight:600;cursor:pointer}
-    .btn-save{background:linear-gradient(135deg,#7aa2f7,#bb9af7);color:#1a1b26;margin-top:6px}
+    .status{margin-top:14px;font-size:16px;font-weight:700;text-align:center;letter-spacing:1px}
+    .status.bahaya{color:#f7768e}
+    .status.hati{color:#e0af68}
+    .status.aman{color:#9ece6a}
     .title{font-size:11px;font-weight:600;color:#565f89;letter-spacing:.5px;margin-bottom:12px;text-transform:uppercase}
-    .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}
+    .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
     .row label{font-size:13px;color:#a9b1d6}
-    .row input{width:78px;padding:10px;background:#24283b;border:1px solid #3b3d57;border-radius:12px;
+    .row input{width:80px;padding:10px;background:#24283b;border:1px solid #3b3d57;border-radius:12px;
                color:#7aa2f7;font-size:15px;font-weight:600;text-align:center;outline:none}
-    .info{font-size:11px;color:#565f89;text-align:center;margin-top:6px}
+    .btn{width:100%;padding:14px;border:none;border-radius:14px;font-size:14px;font-weight:600;cursor:pointer;
+         background:linear-gradient(135deg,#7aa2f7,#bb9af7);color:#1a1b26;margin-top:6px}
+    .info{font-size:11px;color:#565f89;text-align:center;margin-top:8px}
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- GAUGE -->
     <div class="card">
       <div class="header">
         <h1>HC-SR04 Monitor</h1>
@@ -59,25 +63,22 @@
             <div class="unit">cm</div>
           </div>
         </div>
-        <div class="status" id="status">Menghubungkan ke MQTT...</div>
+        <div class="status" id="status">Menghubungkan...</div>
       </div>
     </div>
 
+    <!-- CONFIG -->
     <div class="card">
       <div class="title">Konfigurasi Batas Jarak</div>
       <div class="row">
-        <label>Zona Mati (0 → cm)</label>
-        <input type="number" id="mati" value="20" step="0.5">
+        <label>BAHAYA (0 → ... cm)</label>
+        <input type="number" id="bahaya" value="25" step="0.5">
       </div>
       <div class="row">
-        <label>Lampu 1 Kedip (→ cm)</label>
-        <input type="number" id="kedip" value="40" step="0.5">
+        <label>HATI-HATI (→ ... cm)</label>
+        <input type="number" id="hati" value="80" step="0.5">
       </div>
-      <div class="row">
-        <label>Lampu 2 Nyala (→ cm)</label>
-        <input type="number" id="nyala" value="60" step="0.5">
-      </div>
-      <button class="btn btn-save" onclick="kirim()">Simpan & Kirim ke ESP32</button>
+      <button class="btn" onclick="kirim()">Simpan & Kirim ke ESP32</button>
       <p class="info">Bisa dibuka dari HP di mana saja (butuh internet)</p>
     </div>
   </div>
@@ -88,7 +89,7 @@
 
     client.on('connect', () => {
       document.getElementById('dot').classList.add('on');
-      document.getElementById('status').textContent = 'Terhubung • Menunggu data...';
+      document.getElementById('status').textContent = 'Terhubung';
       client.subscribe('esp32/hcsr04/jarak');
       client.subscribe('esp32/hcsr04/status');
     });
@@ -104,26 +105,24 @@
         }
       }
       if (topic === 'esp32/hcsr04/status') {
-        document.getElementById('status').textContent = data;
+        const el = document.getElementById('status');
+        el.textContent = data;
+        el.className = 'status';
+        if (data === 'BAHAYA') el.classList.add('bahaya');
+        else if (data === 'HATI-HATI') el.classList.add('hati');
+        else el.classList.add('aman');
       }
-    });
-
-    client.on('close', () => {
-      document.getElementById('dot').classList.remove('on');
-      document.getElementById('status').textContent = 'Terputus dari MQTT';
     });
 
     function kirim() {
-      const mati  = parseFloat(document.getElementById('mati').value);
-      const kedip = parseFloat(document.getElementById('kedip').value);
-      const nyala = parseFloat(document.getElementById('nyala').value);
-
-      if (!(mati < kedip && kedip < nyala)) {
-        alert('Urutan harus: Zona Mati < Kedip < Nyala');
+      const bahaya = parseFloat(document.getElementById('bahaya').value);
+      const hati   = parseFloat(document.getElementById('hati').value);
+      if (!(bahaya < hati)) {
+        alert('Nilai BAHAYA harus lebih kecil dari HATI-HATI');
         return;
       }
-      client.publish('esp32/hcsr04/config', `${mati},${kedip},${nyala}`);
-      alert(`Terkirim!\nZona Mati: 0-${mati} cm\nKedip: ${mati}-${kedip} cm\nNyala: ${kedip}-${nyala} cm`);
+      client.publish('esp32/hcsr04/config', `${bahaya},${hati}`);
+      alert(`Terkirim!\nBAHAYA : 0 – ${bahaya} cm\nHATI-HATI : ${bahaya} – ${hati} cm`);
     }
   </script>
 </body>
