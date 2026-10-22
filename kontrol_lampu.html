@@ -1,94 +1,397 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kontrol Lampu IoT</title>
-    
-    <!-- Library MQTT Paho -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HC-SR04 Distance Controller</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #1e1e2f;
-            color: white;
-            text-align: center;
-            padding-top: 50px;
-            margin: 0;
-        }
-        .card {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 30px;
-            display: inline-block;
-            width: 280px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-        }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
 
-        /* LAMPI MATI: Dibuat warna abu-abu (grayscale 100%) dan redup */
-        .icon-lampu {
-            font-size: 80px;
-            margin-bottom: 10px;
-            filter: grayscale(100%) opacity(0.3);
-            transition: all 0.3s ease;
-        }
+    body {
+      background: #0f0f13;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
 
-        /* LAMPU MENYALA: Warna kuning asli dengan efek cahaya berpijar */
-        .lampu-on {
-            filter: grayscale(0%) opacity(1) drop-shadow(0 0 20px #ffeb3b);
-        }
+    .container {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
 
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-            margin: 5px;
-            color: white;
-        }
-        .btn-on { background: #38ef7d; color: #1e1e2f; }
-        .btn-off { background: #eb3941; }
-    </style>
+    /* ===== HEADER CARD ===== */
+    .card {
+      background: #1a1b26;
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
 
-    <script>
-        var idAcak = "client_web_" + Math.floor(Math.random() * 10000);
-        var client = new Paho.MQTT.Client("broker.emqx.io", 8083, idAcak);
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-        client.connect({
-            onSuccess: function () {
-                var status = document.getElementById("status");
-                status.innerText = "● Terhubung Ke Server";
-                status.style.color = "#38ef7d";
-            }
-        });
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #c0caf5;
+    }
 
-        function kirimPerintah(pesan) {
-            var message = new Paho.MQTT.Message(pesan);
-            message.destinationName = "esp32/lampu/kontrol";
-            client.send(message);
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #f7768e;
+      box-shadow: 0 0 8px #f7768e;
+    }
 
-            var icon = document.getElementById("iconLampu");
-            if (pesan === "ON") {
-                icon.className = "icon-lampu lampu-on"; // Berubah ke Kuning Bersinar
-            } else {
-                icon.className = "icon-lampu"; // Berubah ke Abu-abu Redup
-            }
-        }
-    </script>
+    .status-dot.connected {
+      background: #9ece6a;
+      box-shadow: 0 0 8px #9ece6a;
+    }
+
+    /* ===== CIRCULAR GAUGE ===== */
+    .gauge-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0 5px;
+    }
+
+    .gauge {
+      position: relative;
+      width: 200px;
+      height: 200px;
+    }
+
+    .gauge svg {
+      transform: rotate(-90deg);
+    }
+
+    .gauge-bg {
+      fill: none;
+      stroke: #2a2b3d;
+      stroke-width: 12;
+    }
+
+    .gauge-fill {
+      fill: none;
+      stroke: url(#gradient);
+      stroke-width: 12;
+      stroke-linecap: round;
+      stroke-dasharray: 534;
+      stroke-dashoffset: 534;
+      transition: stroke-dashoffset 0.4s ease;
+    }
+
+    .gauge-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .gauge-value {
+      font-size: 48px;
+      font-weight: 700;
+      color: #c0caf5;
+      line-height: 1;
+    }
+
+    .gauge-unit {
+      font-size: 14px;
+      color: #565f89;
+      margin-top: 4px;
+    }
+
+    .status-text {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #a9b1d6;
+      text-align: center;
+    }
+
+    /* ===== CONNECTION ===== */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-connect {
+      background: linear-gradient(135deg, #7aa2f7, #bb9af7);
+      color: #1a1b26;
+    }
+
+    .btn-connect:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-connect.connected {
+      background: linear-gradient(135deg, #f7768e, #ff9e64);
+    }
+
+    /* ===== CONFIG SECTION ===== */
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #565f89;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    .input-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .input-group label {
+      font-size: 13px;
+      color: #a9b1d6;
+    }
+
+    .input-group input {
+      width: 80px;
+      padding: 10px 12px;
+      background: #24283b;
+      border: 1px solid #3b3d57;
+      border-radius: 12px;
+      color: #7aa2f7;
+      font-size: 15px;
+      font-weight: 600;
+      text-align: center;
+      outline: none;
+    }
+
+    .input-group input:focus {
+      border-color: #7aa2f7;
+    }
+
+    .btn-save {
+      background: linear-gradient(135deg, #7aa2f7, #bb9af7);
+      color: #1a1b26;
+      margin-top: 8px;
+    }
+
+    .btn-save:hover {
+      filter: brightness(1.1);
+    }
+
+    .info {
+      font-size: 11px;
+      color: #565f89;
+      text-align: center;
+      margin-top: 8px;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
 
+    <!-- HEADER + GAUGE -->
     <div class="card">
-        <div id="iconLampu" class="icon-lampu">💡</div>
-        <h3>Kontrol Lampu ESP32</h3>
-        <p id="status" style="color: #ff6b6b; font-weight: bold;">● Menghubungkan...</p>
-        
-        <button class="btn btn-on" onclick="kirimPerintah('ON')">NYALAKAN</button>
-        <button class="btn btn-off" onclick="kirimPerintah('OFF')">MATIKAN</button>
+      <div class="header">
+        <h1>HC-SR04 Monitor</h1>
+        <div class="status-dot" id="statusDot"></div>
+      </div>
+
+      <div class="gauge-container">
+        <div class="gauge">
+          <svg width="200" height="200" viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#7aa2f7"/>
+                <stop offset="100%" stop-color="#bb9af7"/>
+              </linearGradient>
+            </defs>
+            <circle class="gauge-bg" cx="100" cy="100" r="85"/>
+            <circle class="gauge-fill" id="gaugeFill" cx="100" cy="100" r="85"/>
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-value" id="distanceValue">---</div>
+            <div class="gauge-unit">cm</div>
+          </div>
+        </div>
+        <div class="status-text" id="statusText">Belum terhubung</div>
+      </div>
     </div>
 
+    <!-- CONNECTION -->
+    <div class="card">
+      <button class="btn btn-connect" id="btnConnect" onclick="toggleConnect()">
+        Hubungkan ke ESP32
+      </button>
+      <p class="info">Gunakan Chrome / Edge • Pilih port COM ESP32</p>
+    </div>
+
+    <!-- CONFIGURATION -->
+    <div class="card">
+      <div class="section-title">Konfigurasi Batas Jarak</div>
+
+      <div class="input-group">
+        <label>Zona Mati (0 → ... cm)</label>
+        <input type="number" id="batasMati" value="20" step="0.5">
+      </div>
+
+      <div class="input-group">
+        <label>Lampu 1 Kedip (→ ... cm)</label>
+        <input type="number" id="batasKedip" value="40" step="0.5">
+      </div>
+
+      <div class="input-group">
+        <label>Lampu 2 Nyala (→ ... cm)</label>
+        <input type="number" id="batasNyala" value="60" step="0.5">
+      </div>
+
+      <button class="btn btn-save" onclick="kirimConfig()">
+        Simpan & Kirim ke ESP32
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    let port = null;
+    let reader = null;
+    let connected = false;
+
+    const gaugeFill = document.getElementById('gaugeFill');
+    const circumference = 2 * Math.PI * 85; // ≈ 534
+
+    function updateGauge(cm) {
+      // Skala 0-100 cm
+      const max = 100;
+      const value = Math.min(Math.max(cm, 0), max);
+      const offset = circumference - (value / max) * circumference;
+      gaugeFill.style.strokeDashoffset = offset;
+      document.getElementById('distanceValue').textContent = cm.toFixed(1);
+    }
+
+    async function toggleConnect() {
+      if (connected) {
+        await disconnect();
+      } else {
+        await connect();
+      }
+    }
+
+    async function connect() {
+      try {
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+
+        connected = true;
+        document.getElementById('btnConnect').textContent = 'Putuskan Koneksi';
+        document.getElementById('btnConnect').classList.add('connected');
+        document.getElementById('statusDot').classList.add('connected');
+        document.getElementById('statusText').textContent = 'Terhubung • Menunggu data...';
+
+        readLoop();
+      } catch (err) {
+        alert('Gagal terhubung: ' + err.message);
+      }
+    }
+
+    async function disconnect() {
+      connected = false;
+      if (reader) {
+        await reader.cancel();
+        reader = null;
+      }
+      if (port) {
+        await port.close();
+        port = null;
+      }
+      document.getElementById('btnConnect').textContent = 'Hubungkan ke ESP32';
+      document.getElementById('btnConnect').classList.remove('connected');
+      document.getElementById('statusDot').classList.remove('connected');
+      document.getElementById('statusText').textContent = 'Belum terhubung';
+      document.getElementById('distanceValue').textContent = '---';
+    }
+
+    async function readLoop() {
+      const textDecoder = new TextDecoderStream();
+      const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+      reader = textDecoder.readable.getReader();
+
+      let buffer = '';
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += value;
+
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            const clean = line.trim();
+            if (clean.startsWith('Jarak:')) {
+              const parts = clean.split(' ');
+              if (parts.length >= 2) {
+                const cm = parseFloat(parts[1]);
+                if (!isNaN(cm)) {
+                  updateGauge(cm);
+                }
+              }
+            } else if (clean.includes('Lampu') || clean.includes('mati') || 
+                       clean.includes('jangkauan') || clean.includes('terdeteksi')) {
+              document.getElementById('statusText').textContent = clean;
+            }
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function kirimConfig() {
+      if (!connected || !port) {
+        alert('Hubungkan ke ESP32 terlebih dahulu!');
+        return;
+      }
+
+      const mati  = parseFloat(document.getElementById('batasMati').value);
+      const kedip = parseFloat(document.getElementById('batasKedip').value);
+      const nyala = parseFloat(document.getElementById('batasNyala').value);
+
+      if (!(mati < kedip && kedip < nyala)) {
+        alert('Urutan harus: Zona Mati < Kedip < Nyala');
+        return;
+      }
+
+      const perintah = `SET,${mati},${kedip},${nyala}\n`;
+      const writer = port.writable.getWriter();
+      await writer.write(new TextEncoder().encode(perintah));
+      writer.releaseLock();
+
+      alert(`Konfigurasi terkirim!\n\nZona Mati : 0 – ${mati} cm\nLampu 1  : ${mati} – ${kedip} cm\nLampu 2  : ${kedip} – ${nyala} cm`);
+    }
+  </script>
 </body>
 </html>
